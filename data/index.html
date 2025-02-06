@@ -1,0 +1,108 @@
+<html>
+    <script type="text/javascript">
+        var prevUptimeSec = 0;
+
+        addEventListener("load", () => loadSensorData(), false);
+
+        setInterval(() => loadSensorData(), 5000);
+
+        async function loadSensorData() {
+            var ul = document.getElementById("errors");
+
+            console.log("Getting data...");
+
+            const response = await fetch("/getData");
+
+            if (!response.ok){
+                console.log(response.status);
+            }else{
+                console.log("Success!");
+                const serverData = await response.json();
+
+                document.getElementById("uptime").innerHTML = `${serverData.uptime.days} days, ${serverData.uptime.hours} hours, ${serverData.uptime.minutes} minutes, ${serverData.uptime.seconds} seconds`;
+                
+                document.getElementById("cpu_usage").innerHTML = `${serverData.cpu_loading.last_minute * 100}% usage`;
+
+                document.getElementById("partition").innerHTML = `${serverData["disk space"].partition}`;
+                document.getElementById("disk_usage").innerHTML = `${serverData["disk space"].used}`;
+                document.getElementById("disk_total").innerHTML = `${serverData["disk space"].total}`;
+
+                document.getElementById("free_memory").innerHTML = `${serverData.memory.free}`;
+                document.getElementById("avail_memory").innerHTML = `${serverData.memory.available}`;
+                document.getElementById("total_memory").innerHTML = `${serverData.memory.total}`;
+
+                document.getElementById("temp").innerHTML = `${serverData.temperature.temp}&deg; C`;
+                document.getElementById("humidity").innerHTML = `${serverData.temperature.humidity}% RH`;
+
+                var currentUptimeSec = (((((serverData.uptime.days * 24) + serverData.uptime.hours) * 60) + serverData.uptime.minutes) * 60) + serverData.uptime.seconds;
+                
+                ul.innerHTML = ''
+
+                if (serverData.temperature.temp >= 30){
+                    var li = document.createElement("li");
+                    li.textContent = "The server's temperature is too high!";
+                    ul.appendChild(li);
+                }
+
+                if (serverData.cpu_loading.last_minute >= 1.00){
+                    var li = document.createElement("li");
+                    li.textContent = "The server's under excessive load!";
+                    ul.appendChild(li);
+                }
+
+                if (serverData.memory.free.slice(0, -2) < 2000){
+                    var li = document.createElement("li");
+                    li.textContent = "The server's free memory is under 2Mb!";
+                    ul.appendChild(li);
+                }
+
+                if ((serverData["disk space"].used.slice(0, -1) / serverData["disk space"].total.slice(0, -1)) > 0.50){
+                    var li = document.createElement("li");
+                    li.textContent = "The server's available disk space is more than 50% of the total space!";
+                    ul.appendChild(li);
+                }
+
+                if (currentUptimeSec < prevUptimeSec){
+                    var li = document.createElement("li");
+                    li.textContent = "The server's been reset!";
+                    ul.appendChild(li);
+                }
+
+                prevUptimeSec = currentUptimeSec;
+            }
+        }
+    </script>
+
+    <body>
+        <h1><strong>CSUnix Server Data</strong></h1>
+        <label for="uptime">Uptime: </label>
+        <h2 id="uptime"></h2>
+        <br/>
+        <label for="cpu_usage">CPU: </label>
+        <h2 id="cpu_usage"></h2>
+        <br/>
+        <label for="partition">Partition: </label>
+        <h2 id="partition"></h2>
+        <label for="disk_usage">Disk Space Used: </label>
+        <h2 id="disk_usage"></h2>
+        <label for="disk_total">Total Disk Space: </label>
+        <h2 id="disk_total"></h2>
+        <br/>
+        <label for="free_memory">Free Memory: </label>
+        <h2 id="free_memory"></h2>
+        <label for="avail_memory">Available Memory: </label>
+        <h2 id="avail_memory"></h2>
+        <label for="total_memory">Total Memory: </label>
+        <h2 id="total_memory"></h2>
+        <br/>
+        <label for="temp">Temp: </label>
+        <h2 id="temp"></h2>
+        <label for="humidity">Humidity: </label>
+        <h2 id="humidity"></h2>
+        <br/><br/>
+        <ul id="errors"></ul>
+    </body>
+    <footer>
+        <p>Name: Cole Anderson</p>
+    </footer>
+</html>
